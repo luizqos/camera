@@ -26,6 +26,7 @@ services:
       - ./entrypoint-recorder.sh:/entrypoint-recorder.sh:ro
       - ./cameras.json:/cameras.json:ro
       - ./record:/record
+      - Z:\Cameras:/archive
     depends_on:
       - go2rtc
     networks:

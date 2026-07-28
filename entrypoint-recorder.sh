@@ -1,9 +1,27 @@
 #!/bin/sh
 DEST_DIR="/record"
+ARCHIVE_DIR="/archive"
 CONFIG_FILE="/cameras.json"
 TMP_REC_FILE="/tmp/cameras_to_record.json"
 
+# ==========================================
+# CONFIGURAÇÕES DE ARMAZENAMENTO E LIMPEZA
+# ==========================================
+MAX_STORAGE_GB=100      # Tamanho máximo reservado para gravações ativas (em GB)
+TRIGGER_PERCENT=80      # Limite em % para disparar a ação (ex: 80%)
+PURGE_PERCENT=30        # Quanto liberar em % do limite máximo (ex: 30%)
+
+# Ação de Limpeza:
+#  "DELETE" -> Exclui permanentemente os arquivos antigos.
+#  "MOVE"   -> Move os arquivos antigos para o diretório $ARCHIVE_DIR.
+CLEANUP_ACTION="DELETE"
+# ==========================================
+
 mkdir -p "${DEST_DIR}"
+
+if [ "$CLEANUP_ACTION" = "MOVE" ]; then
+  mkdir -p "${ARCHIVE_DIR}"
+fi
 
 if [ ! -f "$CONFIG_FILE" ]; then
   echo "[Recorder] Erro: Arquivo $CONFIG_FILE nao encontrado!"
@@ -35,50 +53,58 @@ gravar_stream() {
   done
 }
 
-# Rotina de Limpeza Automática em Lote (30% dos arquivos mais antigos)
+# Rotina de Gerenciamento de Espaço (Excluir ou Mover)
 limpar_disco_se_necessario() {
-  MAX_USAGE=80
-  PURGE_PERCENT=30
+  # Converte GB para KB (1 GB = 1048576 KB)
+  MAX_STORAGE_KB=$(( MAX_STORAGE_GB * 1048576 ))
+  TRIGGER_KB=$(( MAX_STORAGE_KB * TRIGGER_PERCENT / 100 ))
+  TARGET_REDUCTION_KB=$(( MAX_STORAGE_KB * PURGE_PERCENT / 100 ))
 
   while true; do
-    # Verifica a porcentagem de uso do disco no diretório /record
-    CURRENT_USAGE=$(df -k "${DEST_DIR}" | awk 'NR==2 {gsub("%","",$5); print $5}')
+    # Calcula o tamanho total atual ocupado por arquivos MP4 na pasta /record em KB
+    CURRENT_USAGE_KB=$(du -k "${DEST_DIR}"/*.mp4 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
+    CURRENT_USAGE_MB=$(( CURRENT_USAGE_KB / 1024 ))
 
-    if [ -n "$CURRENT_USAGE" ] && [ "$CURRENT_USAGE" -ge "$MAX_USAGE" ]; then
-      echo "[Cleaner] Uso de disco em ${CURRENT_USAGE}% (Limite: ${MAX_USAGE}%). Iniciando limpeza de ~${PURGE_PERCENT}% dos vídeos antigos..."
+    if [ "$CURRENT_USAGE_KB" -ge "$TRIGGER_KB" ]; then
+      echo "[Cleaner] Uso de gravações: ${CURRENT_USAGE_MB}MB (Gatilho: ${TRIGGER_PERCENT}% de ${MAX_STORAGE_GB}GB)."
+      echo "[Cleaner] Ação configurada: ${CLEANUP_ACTION}. Processando ~${PURGE_PERCENT}% (${TARGET_REDUCTION_KB}KB)..."
 
-      # Conta o total de arquivos MP4
-      TOTAL_FILES=$(ls -1 "${DEST_DIR}"/*.mp4 2>/dev/null | wc -l)
+      FREED_KB=0
 
-      if [ "$TOTAL_FILES" -gt 0 ]; then
-        # Calcula quantos arquivos representam 30% do total (mínimo de 1 arquivo)
-        FILES_TO_DELETE=$(( (TOTAL_FILES * PURGE_PERCENT + 99) / 100 ))
-
-        echo "[Cleaner] Total de gravações: ${TOTAL_FILES}. Removendo os ${FILES_TO_DELETE} arquivos mais antigos..."
-
-        # Seleciona os N arquivos mais antigos (ordenados por data de modificação) e apaga
-        ls -1t "${DEST_DIR}"/*.mp4 2>/dev/null | tail -n "${FILES_TO_DELETE}" | while read -r file; do
-          if [ -f "$file" ]; then
-            echo "[Cleaner] Apagando: ${file}"
+      # Lista arquivos do mais antigo para o mais novo
+      ls -1tr "${DEST_DIR}"/*.mp4 2>/dev/null | while read -r file; do
+        if [ -f "$file" ]; then
+          FILE_SIZE_KB=$(du -k "$file" | awk '{print $1}')
+          
+          if [ "$CLEANUP_ACTION" = "MOVE" ]; then
+            FILENAME=$(basename "$file")
+            echo "[Cleaner] Movendo arquivo antigo: ${FILENAME} -> ${ARCHIVE_DIR}/"
+            mv "$file" "${ARCHIVE_DIR}/${FILENAME}"
+          else
+            echo "[Cleaner] Apagando arquivo antigo: ${file}"
             rm -f "$file"
           fi
-        done
 
-        echo "[Cleaner] Limpeza concluída!"
-      else
-        echo "[Cleaner] Nenhum arquivo .mp4 para remover."
-      fi
+          FREED_KB=$(( FREED_KB + FILE_SIZE_KB ))
+
+          # Para assim que atingir a cota de redução estipulada
+          if [ "$FREED_KB" -ge "$TARGET_REDUCTION_KB" ]; then
+            echo "[Cleaner] Processamento concluído com sucesso! Total processado: $(( FREED_KB / 1024 ))MB."
+            break
+          fi
+        fi
+      done
     fi
 
-    # Intervalo de 60 segundos antes da próxima checagem
-    sleep 3600
+    # Aguarda 60 segundos antes de realizar a próxima verificação
+    sleep 60
   done
 }
 
-# Inicia a limpeza em segundo plano
+# Inicia o monitor em segundo plano
 limpar_disco_se_necessario &
 
-# Processa câmeras configuradas e inicia as gravações
+# Filtra câmeras com "record": true e inicia as gravações
 jq -c '.[] | select(.record == true)' "$CONFIG_FILE" > "$TMP_REC_FILE" 2>/dev/null
 
 if [ -s "$TMP_REC_FILE" ]; then
