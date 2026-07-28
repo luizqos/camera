@@ -167,7 +167,7 @@ function renderQueueUI() {
 
     if (index === currentIndex) {
       li.classList.add('playing');
-      li.innerHTML = `▶ <strong>${escapeHtml(item.name)}</strong> (Tocando)`;
+      li.innerHTML = `▶ <strong>${escapeHtml(item.name)}</strong>`;
     } else {
       li.innerHTML = `${index + 1}. ${escapeHtml(item.name)}`;
       
