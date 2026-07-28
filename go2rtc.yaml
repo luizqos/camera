@@ -1,0 +1,6 @@
+api:
+  listen: ":1984"
+  origin: "*"
+
+streams:
+  camera_garagem: "rtsp://admin:Ferrugem2026@192.168.3.10:554/onvif1"

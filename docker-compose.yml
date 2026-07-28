@@ -1,0 +1,48 @@
+networks:
+  cameras-net:
+    driver: bridge
+
+services:
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    container_name: go2rtc
+    restart: unless-stopped
+    ports:
+      - "1984:1984"
+      - "8554:8554"
+      - "8555:8555/tcp"
+      - "8555:8555/udp"
+    volumes:
+      - ./go2rtc.yaml:/config/go2rtc.yaml:ro
+      - ./cameras.json:/config/cameras.json:ro
+    networks:
+      - cameras-net
+
+  gravador:
+    build: .
+    container_name: gravador_cameras
+    restart: unless-stopped
+    volumes:
+      - ./entrypoint-recorder.sh:/entrypoint-recorder.sh:ro
+      - ./cameras.json:/cameras.json:ro
+      - ./record:/record
+    depends_on:
+      - go2rtc
+    networks:
+      - cameras-net
+
+  web:
+    image: nginx:alpine
+    container_name: painel_cameras_web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./cameras.json:/etc/nginx/cameras.json:ro
+      - ./record:/record:ro
+    depends_on:
+      - go2rtc
+    networks:
+      - cameras-net

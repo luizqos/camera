@@ -1,0 +1,15 @@
+# Ignorar vídeos gravados
+*.mp4
+record/*.mp4
+
+# Logs
+*.log
+
+# Sistema operacional / IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Arquivos temporários
+*.tmp
