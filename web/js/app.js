@@ -1,4 +1,3 @@
-// Estado da Fila de Reprodução
 let playlist = [];
 let currentIndex = 0;
 
@@ -6,12 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupTabs();
   loadLiveCameras();
   setupPlayerEvents();
+  setupRecordingSelectEvents();
 
-  document.getElementById('btn-play-recordings').addEventListener('click', startPlaylist);
+  document.getElementById('btn-play-recordings').addEventListener('click', startPlaylistFromSelection);
   document.getElementById('btn-refresh-recordings').addEventListener('click', loadRecordingsList);
 });
 
-// --- GERENCIAMENTO DE ABAS ---
 function setupTabs() {
   const btnLive = document.getElementById('tab-live');
   const btnRecordings = document.getElementById('tab-recordings');
@@ -38,7 +37,6 @@ function setupTabs() {
   });
 }
 
-// --- CÂMERAS AO VIVO ---
 async function loadLiveCameras() {
   const grid = document.getElementById('cameras-grid');
   try {
@@ -68,7 +66,6 @@ async function loadLiveCameras() {
   }
 }
 
-// --- VISUALIZADOR DE GRAVAÇÕES E FILA ---
 async function loadRecordingsList() {
   const select = document.getElementById('recording-select');
   try {
@@ -84,7 +81,6 @@ async function loadRecordingsList() {
       return;
     }
 
-    // Ordena do mais recente para o mais antigo
     mp4Files.sort((a, b) => b.name.localeCompare(a.name));
 
     mp4Files.forEach(file => {
@@ -98,10 +94,19 @@ async function loadRecordingsList() {
   }
 }
 
+function setupRecordingSelectEvents() {
+  const select = document.getElementById('recording-select');
+
+  select.addEventListener('dblclick', (e) => {
+    if (e.target && e.target.tagName === 'OPTION' && !e.target.disabled) {
+      playSingleRecordingDirectly(e.target.value, e.target.textContent);
+    }
+  });
+}
+
 function setupPlayerEvents() {
   const player = document.getElementById('single-record-player');
 
-  // Evento nativo do HTML5 Video: dispara quando o vídeo atual termina
   player.addEventListener('ended', () => {
     if (currentIndex + 1 < playlist.length) {
       currentIndex++;
@@ -110,23 +115,27 @@ function setupPlayerEvents() {
   });
 }
 
-function startPlaylist() {
+function playSingleRecordingDirectly(url, name) {
+  playlist = [{ name, url }];
+  currentIndex = 0;
+  playCurrentVideo();
+}
+
+function startPlaylistFromSelection() {
   const select = document.getElementById('recording-select');
-  const selectedOptions = Array.from(select.selectedOptions);
+  const selectedOptions = Array.from(select.selectedOptions).filter(opt => !opt.disabled);
 
   if (selectedOptions.length === 0) {
     alert('Selecione pelo menos um arquivo na lista.');
     return;
   }
 
-  // Cria a playlist com os itens selecionados
   playlist = selectedOptions.map(opt => ({
     name: opt.textContent,
     url: opt.value
   }));
 
   currentIndex = 0;
-  renderQueueUI();
   playCurrentVideo();
 }
 
@@ -161,6 +170,7 @@ function renderQueueUI() {
       li.innerHTML = `▶ <strong>${escapeHtml(item.name)}</strong> (Tocando)`;
     } else {
       li.innerHTML = `${index + 1}. ${escapeHtml(item.name)}`;
+      
       li.addEventListener('click', () => {
         currentIndex = index;
         playCurrentVideo();
