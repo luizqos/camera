@@ -23,10 +23,9 @@ services:
     container_name: gravador_cameras
     restart: unless-stopped
     volumes:
-      - ./entrypoint-recorder.sh:/entrypoint-recorder.sh:ro
       - ./cameras.json:/cameras.json:ro
       - ./record:/record
-      - Z:\Cameras:/archive
+      - C:\Cameras:/archive
     depends_on:
       - go2rtc
     networks:
