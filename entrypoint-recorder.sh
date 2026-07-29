@@ -31,9 +31,7 @@ gravar_stream() {
     TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
     OUTPUT_FILE="${DEST_DIR}/${STREAM_ID}_${TIMESTAMP}.mp4"
   
-    echo "[Cleaner] TIME: ${CLEANUP_TIME} Hour"
-
-    echo "[Recorder] Iniciando gravação de ${STREAM_ID} -> ${OUTPUT_FILE}"
+    echo "[Recorder] Iniciando gravação de ${STREAM_ID} -> ${OUTPUT_FILE} -> Tempo e Limpeza: ${CLEANUP_TIME} Hour"
 
     ffmpeg -hide_banner -loglevel warning \
       -fflags +genpts \
