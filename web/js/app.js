@@ -1,7 +1,9 @@
 let playlist = [];
 let currentIndex = 0;
+let runtimeConfig = { go2rtcPort: '1984' };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadRuntimeConfig();
   setupTabs();
   loadLiveCameras();
   setupPlayerEvents();
@@ -11,17 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-refresh-recordings').addEventListener('click', loadRecordingsList);
 });
 
+// Busca as configurações expostas pelo Nginx/Env
+async function loadRuntimeConfig() {
+  try {
+    const res = await fetch('/config.json');
+    runtimeConfig = await res.json();
+  } catch (e) {
+    console.warn('Não foi possível carregar config.json, usando padrões.');
+  }
+}
+
 function setupTabs() {
   const btnLive = document.getElementById('tab-live');
   const btnRecordings = document.getElementById('tab-recordings');
-  
   const viewLive = document.getElementById('view-live');
   const viewRecordings = document.getElementById('view-recordings');
 
   btnLive.addEventListener('click', () => {
     btnLive.classList.add('active');
     btnRecordings.classList.remove('active');
-
     viewLive.classList.add('active');
     viewRecordings.classList.remove('active');
   });
@@ -29,10 +39,8 @@ function setupTabs() {
   btnRecordings.addEventListener('click', () => {
     btnRecordings.classList.add('active');
     btnLive.classList.remove('active');
-
     viewRecordings.classList.add('active');
     viewLive.classList.remove('active');
-
     loadRecordingsList();
   });
 }
@@ -47,7 +55,9 @@ async function loadLiveCameras() {
     cameras.forEach(cam => {
       const card = document.createElement('div');
       card.className = 'card';
-      const streamUrl = `http://${window.location.hostname}:1984/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+      
+      // Usa a porta montada dinamicamente do .env
+      const streamUrl = `http://${window.location.hostname}:${runtimeConfig.go2rtcPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
 
       card.innerHTML = `
         <div class="card-header">
@@ -73,7 +83,6 @@ async function loadRecordingsList() {
     const files = await response.json();
 
     select.innerHTML = '';
-
     const mp4Files = files.filter(file => file.name.endsWith('.mp4'));
 
     if (mp4Files.length === 0) {
@@ -96,7 +105,6 @@ async function loadRecordingsList() {
 
 function setupRecordingSelectEvents() {
   const select = document.getElementById('recording-select');
-
   select.addEventListener('dblclick', (e) => {
     if (e.target && e.target.tagName === 'OPTION' && !e.target.disabled) {
       playSingleRecordingDirectly(e.target.value, e.target.textContent);
@@ -106,7 +114,6 @@ function setupRecordingSelectEvents() {
 
 function setupPlayerEvents() {
   const player = document.getElementById('single-record-player');
-
   player.addEventListener('ended', () => {
     if (currentIndex + 1 < playlist.length) {
       currentIndex++;
@@ -147,13 +154,11 @@ function playCurrentVideo() {
   if (playlist.length === 0 || !playlist[currentIndex]) return;
 
   const currentItem = playlist[currentIndex];
-
   player.src = currentItem.url;
   title.textContent = `🎬 ${currentItem.name}`;
   queueStatus.textContent = `Fila: ${currentIndex + 1}/${playlist.length}`;
 
   player.play().catch(err => console.log('Autoplay bloqueado pelo navegador:', err));
-
   renderQueueUI();
 }
 
@@ -167,10 +172,9 @@ function renderQueueUI() {
 
     if (index === currentIndex) {
       li.classList.add('playing');
-      li.innerHTML = `▶ <strong>${escapeHtml(item.name)}</strong>`;
+      li.innerHTML = `▶ <strong>${escapeHtml(item.name)}</strong> (Tocando)`;
     } else {
       li.innerHTML = `${index + 1}. ${escapeHtml(item.name)}`;
-      
       li.addEventListener('click', () => {
         currentIndex = index;
         playCurrentVideo();

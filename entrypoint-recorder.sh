@@ -4,18 +4,13 @@ ARCHIVE_DIR="/archive"
 CONFIG_FILE="/cameras.json"
 TMP_REC_FILE="/tmp/cameras_to_record.json"
 
-# ==========================================
-# CONFIGURAÇÕES DE ARMAZENAMENTO E LIMPEZA
-# ==========================================
-MAX_STORAGE_GB=100      # Tamanho máximo reservado para gravações ativas (em GB)
-TRIGGER_PERCENT=80      # Limite em % para disparar a ação (ex: 80%)
-PURGE_PERCENT=30        # Quanto liberar em % do limite máximo (ex: 30%)
+# Lê as variáveis enviadas pelo Docker Compose / .env (com fallback)
+MAX_STORAGE_GB="${MAX_STORAGE_GB:-100}"
+TRIGGER_PERCENT="${TRIGGER_PERCENT:-80}"
+PURGE_PERCENT="${PURGE_PERCENT:-30}"
+CLEANUP_ACTION="${CLEANUP_ACTION:-MOVE}"
+CLEANUP_TIME="${CLEANUP_TIME:-60}"
 
-# Ação de Limpeza:
-#  "DELETE" -> Exclui permanentemente os arquivos antigos.
-#  "MOVE"   -> Move os arquivos antigos para o diretório $ARCHIVE_DIR.
-CLEANUP_ACTION="DELETE"
-# ==========================================
 
 mkdir -p "${DEST_DIR}"
 
@@ -53,58 +48,52 @@ gravar_stream() {
   done
 }
 
-# Rotina de Gerenciamento de Espaço (Excluir ou Mover)
 limpar_disco_se_necessario() {
-  # Converte GB para KB (1 GB = 1048576 KB)
   MAX_STORAGE_KB=$(( MAX_STORAGE_GB * 1048576 ))
   TRIGGER_KB=$(( MAX_STORAGE_KB * TRIGGER_PERCENT / 100 ))
   TARGET_REDUCTION_KB=$(( MAX_STORAGE_KB * PURGE_PERCENT / 100 ))
+  CLEANUP_TIME_HOUR=$(( CLEANUP_TIME * 3600 ))
+  echo "[Cleaner] TIME: ${CLEANUP_TIME} Hour"
 
   while true; do
-    # Calcula o tamanho total atual ocupado por arquivos MP4 na pasta /record em KB
     CURRENT_USAGE_KB=$(du -k "${DEST_DIR}"/*.mp4 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
     CURRENT_USAGE_MB=$(( CURRENT_USAGE_KB / 1024 ))
 
     if [ "$CURRENT_USAGE_KB" -ge "$TRIGGER_KB" ]; then
       echo "[Cleaner] Uso de gravações: ${CURRENT_USAGE_MB}MB (Gatilho: ${TRIGGER_PERCENT}% de ${MAX_STORAGE_GB}GB)."
-      echo "[Cleaner] Ação configurada: ${CLEANUP_ACTION}. Processando ~${PURGE_PERCENT}% (${TARGET_REDUCTION_KB}KB)..."
+      echo "[Cleaner] Ação: ${CLEANUP_ACTION}. Processando ~${PURGE_PERCENT}% (${TARGET_REDUCTION_KB}KB)..."
 
       FREED_KB=0
 
-      # Lista arquivos do mais antigo para o mais novo
       ls -1tr "${DEST_DIR}"/*.mp4 2>/dev/null | while read -r file; do
         if [ -f "$file" ]; then
           FILE_SIZE_KB=$(du -k "$file" | awk '{print $1}')
           
           if [ "$CLEANUP_ACTION" = "MOVE" ]; then
             FILENAME=$(basename "$file")
-            echo "[Cleaner] Movendo arquivo antigo: ${FILENAME} -> ${ARCHIVE_DIR}/"
+            echo "[Cleaner] Movendo: ${FILENAME} -> ${ARCHIVE_DIR}/"
             mv "$file" "${ARCHIVE_DIR}/${FILENAME}"
           else
-            echo "[Cleaner] Apagando arquivo antigo: ${file}"
+            echo "[Cleaner] Apagando: ${file}"
             rm -f "$file"
           fi
 
           FREED_KB=$(( FREED_KB + FILE_SIZE_KB ))
 
-          # Para assim que atingir a cota de redução estipulada
           if [ "$FREED_KB" -ge "$TARGET_REDUCTION_KB" ]; then
-            echo "[Cleaner] Processamento concluído com sucesso! Total processado: $(( FREED_KB / 1024 ))MB."
+            echo "[Cleaner] Processamento concluído! Total: $(( FREED_KB / 1024 ))MB."
             break
           fi
         fi
       done
     fi
 
-    # Aguarda 60 segundos antes de realizar a próxima verificação
-    sleep 60
+    sleep $CLEANUP_TIME_HOUR
   done
 }
 
-# Inicia o monitor em segundo plano
 limpar_disco_se_necessario &
 
-# Filtra câmeras com "record": true e inicia as gravações
 jq -c '.[] | select(.record == true)' "$CONFIG_FILE" > "$TMP_REC_FILE" 2>/dev/null
 
 if [ -s "$TMP_REC_FILE" ]; then
@@ -117,8 +106,6 @@ if [ -s "$TMP_REC_FILE" ]; then
       gravar_stream "${ID}" "${RTSP_INTERNAL_URL}" &
     fi
   done < "$TMP_REC_FILE"
-else
-  echo "[Recorder] Nenhuma câmera configurada para gravação (record: true)."
 fi
 
 rm -f "$TMP_REC_FILE"

@@ -3,6 +3,7 @@
 record/*.mp4
 archive/*.mp4
 cameras.json
+*.env
 
 # Logs
 *.log
