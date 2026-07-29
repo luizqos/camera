@@ -56,8 +56,9 @@ async function loadLiveCameras(configRuntime) {
       
       const isLocal = placeOfExecution.toUpperCase() === 'LOCAL';
       const path = isLocal ? `:${go2rtcPort}` : '/go2rtc';
+      const protocol = isLocal ? `http` : 'https';
 
-      const streamUrl = `http://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+      const streamUrl = `${protocol}://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
 
       card.innerHTML = `
         <div class="card-header">
