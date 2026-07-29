@@ -1,6 +1,7 @@
 # Ignorar vídeos gravados
 *.mp4
 record/*.mp4
+archive/*.mp4
 cameras.json
 
 # Logs
