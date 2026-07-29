@@ -27,6 +27,7 @@ services:
       - TRIGGER_PERCENT=${TRIGGER_PERCENT}
       - PURGE_PERCENT=${PURGE_PERCENT}
       - CLEANUP_ACTION=${CLEANUP_ACTION}
+      - CLEANUP_TIME=${CLEANUP_TIME}
     volumes:
       - ./cameras.json:/cameras.json:ro
       - ${RECORD_PATH}:/record
