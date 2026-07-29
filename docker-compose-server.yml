@@ -17,7 +17,7 @@ services:
       - ./cameras.json:/config/cameras.json:ro
     networks:
       - cameras-net
-
+      
   web:
     image: nginx:alpine
     container_name: painel_cameras_web
@@ -27,6 +27,7 @@ services:
     environment:
       - GO2RTC_PORT=${GO2RTC_PORT}
       - BASE_PATH=${BASE_PATH}
+      - JSON_CAMERA=${JSON_CAMERA}
       - LOCATION_RUN=${LOCATION_RUN}
     volumes:
       - ./web:/usr/share/nginx/html:ro

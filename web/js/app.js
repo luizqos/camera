@@ -1,60 +1,24 @@
 let playlist = [];
 let currentIndex = 0;
-let runtimeConfig = { go2rtcPort: '1984', jsonCamera: './cameras.json', companyName: 'Monitoramento' };
-
-// Carrega as variáveis do .env via endpoint do Nginx
 async function loadRuntimeConfig() {
   try {
     const res = await fetch('/config.json');
-    runtimeConfig = await res.json();
-    console.log('Variáveis do .env carregadas:', runtimeConfig);
+    return await res.json();
   } catch (e) {
     console.warn('Não foi possível carregar config.json, usando valores padrão.');
   }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Primeiro carrega as variáveis do .env
-  await loadRuntimeConfig();
-
-  // 2. Agora você pode usar runtimeConfig.SUA_VARIAVEL em qualquer lugar
-  console.log("Porta go2rtc:", runtimeConfig.go2rtcPort);
-  console.log("Nome da empresa:", runtimeConfig.companyName);
-
-  // Exemplo: Atualizar o título H1 dinamicamente com o valor do .env
-  const headerTitle = document.querySelector('h1');
-  if (headerTitle && runtimeConfig.companyName) {
-    headerTitle.textContent = runtimeConfig.companyName;
-  }
-
+  const configRuntime = await loadRuntimeConfig();
   setupTabs();
-  loadLiveCameras();
-  setupPlayerEvents();
-  setupRecordingSelectEvents();
-});
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadRuntimeConfig();
-  setupTabs();
-  loadLiveCameras();
+  loadLiveCameras(configRuntime);
   setupPlayerEvents();
   setupRecordingSelectEvents();
 
   document.getElementById('btn-play-recordings').addEventListener('click', startPlaylistFromSelection);
   document.getElementById('btn-refresh-recordings').addEventListener('click', loadRecordingsList);
 });
-
-// Busca as configurações expostas pelo Nginx/Env
-async function loadRuntimeConfig() {
-  try {
-    const res = await fetch('/config.json');
-    runtimeConfig = await res.json();
-    console.log('runtimeConfig >>>', runtimeConfig);
-    
-  } catch (e) {
-    console.warn('Não foi possível carregar config.json, usando padrões.');
-  }
-}
 
 function setupTabs() {
   const btnLive = document.getElementById('tab-live');
@@ -78,10 +42,11 @@ function setupTabs() {
   });
 }
 
-async function loadLiveCameras() {
+async function loadLiveCameras(configRuntime) {
+  const { go2rtcPort, jsonCamera, placeOfExecution } = configRuntime;
   const grid = document.getElementById('cameras-grid');
   try {
-    const response = await fetch(runtimeConfig.jsonCamera);
+    const response = await fetch(`${jsonCamera}`);
     const cameras = await response.json();
 
     grid.innerHTML = '';
@@ -89,10 +54,11 @@ async function loadLiveCameras() {
       const card = document.createElement('div');
       card.className = 'card';
       
-      // Usa a porta montada dinamicamente do .env
-      const streamUrl = `http://${window.location.hostname}:${runtimeConfig.go2rtcPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
-      
-      //console.log(">>>>>>",streamUrl);
+      const isLocal = placeOfExecution.toUpperCase() === 'LOCAL';
+      const path = isLocal ? `:${go2rtcPort}` : '/go2rtc';
+
+      const streamUrl = `http://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+
       card.innerHTML = `
         <div class="card-header">
           <span>${escapeHtml(cam.name)}</span>
@@ -206,7 +172,7 @@ function renderQueueUI() {
 
     if (index === currentIndex) {
       li.classList.add('playing');
-      li.innerHTML = `▶ <strong>${escapeHtml(item.name)}</strong> (Tocando)`;
+      li.innerHTML = `▶ <strong>${escapeHtml(item.name)}</strong>`;
     } else {
       li.innerHTML = `${index + 1}. ${escapeHtml(item.name)}`;
       li.addEventListener('click', () => {
