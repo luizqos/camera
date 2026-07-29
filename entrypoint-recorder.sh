@@ -30,6 +30,8 @@ gravar_stream() {
   while true; do
     TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
     OUTPUT_FILE="${DEST_DIR}/${STREAM_ID}_${TIMESTAMP}.mp4"
+  
+    echo "[Cleaner] TIME: ${CLEANUP_TIME} Hour"
 
     echo "[Recorder] Iniciando gravação de ${STREAM_ID} -> ${OUTPUT_FILE}"
 
@@ -53,7 +55,6 @@ limpar_disco_se_necessario() {
   TRIGGER_KB=$(( MAX_STORAGE_KB * TRIGGER_PERCENT / 100 ))
   TARGET_REDUCTION_KB=$(( MAX_STORAGE_KB * PURGE_PERCENT / 100 ))
   CLEANUP_TIME_HOUR=$(( CLEANUP_TIME * 3600 ))
-  echo "[Cleaner] TIME: ${CLEANUP_TIME} Hour"
 
   while true; do
     CURRENT_USAGE_KB=$(du -k "${DEST_DIR}"/*.mp4 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
