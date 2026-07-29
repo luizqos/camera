@@ -1,0 +1,39 @@
+networks:
+  cameras-net:
+    driver: bridge
+
+services:
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    container_name: go2rtc
+    restart: unless-stopped
+    ports:
+      - "${GO2RTC_PORT}:1984"
+      - "8554:8554"
+      - "8555:8555/tcp"
+      - "8555:8555/udp"
+    volumes:
+      - ./go2rtc.yaml:/config/go2rtc.yaml:ro
+      - ./cameras.json:/config/cameras.json:ro
+    networks:
+      - cameras-net
+
+  web:
+    image: nginx:alpine
+    container_name: painel_cameras_web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT}:80"
+    environment:
+      - GO2RTC_PORT=${GO2RTC_PORT}
+      - BASE_PATH=${BASE_PATH}
+      - LOCATION_RUN=${LOCATION_RUN}
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./cameras.json:/etc/nginx/cameras.json:ro
+      - ${RECORD_PATH}:/record:ro
+    depends_on:
+      - go2rtc
+    networks:
+      - cameras-net

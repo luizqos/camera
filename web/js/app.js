@@ -1,6 +1,37 @@
 let playlist = [];
 let currentIndex = 0;
-let runtimeConfig = { go2rtcPort: '1984' };
+let runtimeConfig = { go2rtcPort: '1984', jsonCamera: './cameras.json', companyName: 'Monitoramento' };
+
+// Carrega as variáveis do .env via endpoint do Nginx
+async function loadRuntimeConfig() {
+  try {
+    const res = await fetch('/config.json');
+    runtimeConfig = await res.json();
+    console.log('Variáveis do .env carregadas:', runtimeConfig);
+  } catch (e) {
+    console.warn('Não foi possível carregar config.json, usando valores padrão.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // 1. Primeiro carrega as variáveis do .env
+  await loadRuntimeConfig();
+
+  // 2. Agora você pode usar runtimeConfig.SUA_VARIAVEL em qualquer lugar
+  console.log("Porta go2rtc:", runtimeConfig.go2rtcPort);
+  console.log("Nome da empresa:", runtimeConfig.companyName);
+
+  // Exemplo: Atualizar o título H1 dinamicamente com o valor do .env
+  const headerTitle = document.querySelector('h1');
+  if (headerTitle && runtimeConfig.companyName) {
+    headerTitle.textContent = runtimeConfig.companyName;
+  }
+
+  setupTabs();
+  loadLiveCameras();
+  setupPlayerEvents();
+  setupRecordingSelectEvents();
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadRuntimeConfig();
@@ -18,6 +49,8 @@ async function loadRuntimeConfig() {
   try {
     const res = await fetch('/config.json');
     runtimeConfig = await res.json();
+    console.log('runtimeConfig >>>', runtimeConfig);
+    
   } catch (e) {
     console.warn('Não foi possível carregar config.json, usando padrões.');
   }
@@ -48,7 +81,7 @@ function setupTabs() {
 async function loadLiveCameras() {
   const grid = document.getElementById('cameras-grid');
   try {
-    const response = await fetch('/cameras.json');
+    const response = await fetch(runtimeConfig.jsonCamera);
     const cameras = await response.json();
 
     grid.innerHTML = '';
@@ -58,7 +91,8 @@ async function loadLiveCameras() {
       
       // Usa a porta montada dinamicamente do .env
       const streamUrl = `http://${window.location.hostname}:${runtimeConfig.go2rtcPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
-
+      
+      //console.log(">>>>>>",streamUrl);
       card.innerHTML = `
         <div class="card-header">
           <span>${escapeHtml(cam.name)}</span>
