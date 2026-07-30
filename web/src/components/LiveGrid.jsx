@@ -29,10 +29,10 @@ export function LiveGrid() {
         //const isLocal = isHttp === true;
 
         //const isLocal = config?.placeOfExecution?.toUpperCase() === 'LOCAL';
-        const path = isHttp ? '1984' : '/go2rtc';
+        const path = isHttp ? ':1984' : '/go2rtc';
         const protocol = isLocal ? 'http' : 'https';
        const streamUrl = `${protocol}://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
-       console.log('>>>>>',streamUrl)
+       console.log('',streamUrl)
 
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
