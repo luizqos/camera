@@ -1,57 +1,92 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-export function RecordingsList({ files, onRefresh, onDirectPlay, onPlaySelection, setDraggedItemsFromSelect }) {
-  const handleDragStart = (e) => {
-    const select = e.target.parentElement;
-    const selectedOptions = Array.from(select.selectedOptions).filter((opt) => !opt.disabled);
-    const itemsToDrag = selectedOptions.map((opt) => ({
-      name: opt.textContent,
-      url: opt.value,
-    }));
+export function RecordingsList({ files, onRefresh, onDirectPlay, onPlaySelection, setDraggedItemsFromSelect, setPlaylist, setCurrentIndex }) {
+  const [selectedUrls, setSelectedUrls] = useState([]);
+
+  const toggleSelect = (url, e) => {
+    if (e.ctrlKey || e.metaKey) {
+      if (selectedUrls.includes(url)) {
+        setSelectedUrls(selectedUrls.filter((item) => item !== url));
+      } else {
+        setSelectedUrls([...selectedUrls, url]);
+      }
+    } else {
+      setSelectedUrls([url]);
+    }
+  };
+
+  const handleDragStart = (e, file) => {
+    let itemsToDrag = [];
+
+    const fileUrl = `/recordings/${file.name}`;
+    if (selectedUrls.includes(fileUrl)) {
+      itemsToDrag = files
+        .filter((f) => selectedUrls.includes(`/recordings/${f.name}`))
+        .map((f) => ({ name: f.name, url: `/recordings/${f.name}` }));
+    } else {
+      itemsToDrag = [{ name: file.name, url: fileUrl }];
+      setSelectedUrls([fileUrl]);
+    }
+
     setDraggedItemsFromSelect(itemsToDrag);
     e.dataTransfer.setData('text/plain', 'from-select');
     e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handlePlaySelected = () => {
+    if (selectedUrls.length === 0) {
+      alert('Selecione pelo menos uma gravação.');
+      return;
+    }
+
+    const itemsToPlay = files
+      .filter((f) => selectedUrls.includes(`/recordings/${f.name}`))
+      .map((f) => ({ name: f.name, url: `/recordings/${f.name}` }));
+
+    setPlaylist(itemsToPlay);
+    setCurrentIndex(0);
   };
 
   return (
     <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex flex-col gap-3">
       <div>
         <label className="block text-xs font-medium text-slate-300 mb-2">
-          Selecione uma ou mais gravações (Ctrl/Cmd):
+          Gravações (Clique para selecionar, ou segure Ctrl para múltiplos):
         </label>
-        <select
-          id="recording-select"
-          multiple
-          size={8}
-          className="w-full bg-slate-900 text-slate-100 border border-slate-700 rounded p-2 text-xs focus:outline-none focus:border-blue-500"
-          onDoubleClick={(e) => {
-            if (e.target.tagName === 'OPTION' && !e.target.disabled) {
-              onDirectPlay(e.target.value, e.target.textContent);
-            }
-          }}
-        >
+        
+        <ul className="w-full h-48 bg-slate-900 border border-slate-700 rounded p-1 text-xs overflow-y-auto space-y-1">
           {files.length === 0 ? (
-            <option disabled>Nenhuma gravação encontrada</option>
+            <li className="text-slate-500 text-center py-4">Nenhuma gravação encontrada</li>
           ) : (
-            files.map((file) => (
-              <option
-                key={file.name}
-                value={`/recordings/${file.name}`}
-                draggable
-                onDragStart={handleDragStart}
-                className="p-1.5 border-b border-slate-800 hover:bg-slate-800 cursor-grab active:cursor-grabbing"
-              >
-                {file.name}
-              </option>
-            ))
+            files.map((file) => {
+              const fileUrl = `/recordings/${file.name}`;
+              const isSelected = selectedUrls.includes(fileUrl);
+
+              return (
+                <li
+                  key={file.name}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, file)}
+                  onClick={(e) => toggleSelect(fileUrl, e)}
+                  onDoubleClick={() => onDirectPlay(fileUrl, file.name)}
+                  className={`p-1.5 rounded cursor-grab active:cursor-grabbing select-none truncate transition ${
+                    isSelected
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'hover:bg-slate-800 text-slate-300'
+                  }`}
+                >
+                  📄 {file.name}
+                </li>
+              );
+            })
           )}
-        </select>
+        </ul>
       </div>
 
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={onPlaySelection}
+          onClick={handlePlaySelected}
           className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-3 rounded text-xs transition"
         >
           ▶ Reproduzir Fila
@@ -61,7 +96,7 @@ export function RecordingsList({ files, onRefresh, onDirectPlay, onPlaySelection
           onClick={onRefresh}
           className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-3 rounded text-xs transition"
         >
-          🔄 Atualizar Lista
+          🔄 Atualizar
         </button>
       </div>
     </div>
