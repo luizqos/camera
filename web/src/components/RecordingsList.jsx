@@ -1,15 +1,13 @@
 import React from 'react';
 
-export function RecordingsList({ files, onRefresh, onDirectPlay, setDraggedItemsFromSelect }) {
+export function RecordingsList({ files, onRefresh, onDirectPlay, onPlaySelection, setDraggedItemsFromSelect }) {
   const handleDragStart = (e) => {
     const select = e.target.parentElement;
     const selectedOptions = Array.from(select.selectedOptions).filter((opt) => !opt.disabled);
-
     const itemsToDrag = selectedOptions.map((opt) => ({
       name: opt.textContent,
       url: opt.value,
     }));
-
     setDraggedItemsFromSelect(itemsToDrag);
     e.dataTransfer.setData('text/plain', 'from-select');
     e.dataTransfer.effectAllowed = 'copy';
@@ -22,6 +20,7 @@ export function RecordingsList({ files, onRefresh, onDirectPlay, setDraggedItems
           Selecione uma ou mais gravações (Ctrl/Cmd):
         </label>
         <select
+          id="recording-select"
           multiple
           size={8}
           className="w-full bg-slate-900 text-slate-100 border border-slate-700 rounded p-2 text-xs focus:outline-none focus:border-blue-500"
@@ -50,6 +49,13 @@ export function RecordingsList({ files, onRefresh, onDirectPlay, setDraggedItems
       </div>
 
       <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onPlaySelection}
+          className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-3 rounded text-xs transition"
+        >
+          ▶ Reproduzir Fila
+        </button>
         <button
           type="button"
           onClick={onRefresh}

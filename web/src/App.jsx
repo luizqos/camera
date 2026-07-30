@@ -8,14 +8,12 @@ export default function App() {
   const [config, setConfig] = useState(null);
   const [recordingsFiles, setRecordingsFiles] = useState([]);
   
-  // Estado da Fila de Reprodução
   const [playlist, setPlaylist] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [draggedItemsFromSelect, setDraggedItemsFromSelect] = useState([]);
 
   const playerRef = useRef(null);
 
-  // Carrega /config.json
   useEffect(() => {
     fetch('/config.json')
       .then((res) => res.json())
@@ -23,7 +21,6 @@ export default function App() {
       .catch(() => setConfig({ go2rtcPort: '1984', jsonCamera: '/cameras.json', placeOfExecution: 'LOCAL' }));
   }, []);
 
-  // Carrega gravações
   const fetchRecordings = () => {
     fetch('/recordings/')
       .then((res) => res.json())
@@ -41,7 +38,6 @@ export default function App() {
     }
   }, [activeTab]);
 
-  // Autoplay para o próximo item quando o vídeo terminar
   const handleVideoEnded = () => {
     if (currentIndex + 1 < playlist.length) {
       setCurrentIndex((prev) => prev + 1);
@@ -66,6 +62,26 @@ export default function App() {
     setPlaylist([newItem]);
     setCurrentIndex(0);
   };
+
+const handlePlaySelection = () => {
+  const select = document.getElementById('recording-select');
+  if (!select) return;
+
+  const selectedOptions = Array.from(select.selectedOptions).filter((opt) => !opt.disabled);
+
+  if (selectedOptions.length === 0) {
+    alert('Selecione pelo menos um arquivo na lista.');
+    return;
+  }
+
+  const newPlaylist = selectedOptions.map((opt) => ({
+    name: opt.textContent,
+    url: opt.value,
+  }));
+
+  setPlaylist(newPlaylist);
+  setCurrentIndex(0);
+};
 
   const currentVideoName = playlist[currentIndex]?.name || 'Nenhum vídeo selecionado';
 
@@ -126,6 +142,7 @@ export default function App() {
               files={recordingsFiles}
               onRefresh={fetchRecordings}
               onDirectPlay={handleDirectPlay}
+              onPlaySelection={handlePlaySelection}
               setDraggedItemsFromSelect={setDraggedItemsFromSelect}
             />
 
