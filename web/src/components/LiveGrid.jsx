@@ -29,9 +29,9 @@ export function LiveGrid() {
         //const isLocal = isHttp === true;
 
         //const isLocal = config?.placeOfExecution?.toUpperCase() === 'LOCAL';
-        const path = isHttp ? ':1984' : '/go2rtc';
-        const protocol = isLocal ? 'http' : 'https';
-       const streamUrl = `${protocol}://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+        const pathOrPort = isHttp ? ':1984' : '/go2rtc';
+        //const protocol = isHttp ? 'http' : 'https';
+       const streamUrl = `${window.location.protocol}//${window.location.hostname}${pathOrPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
        console.log('',streamUrl)
 
         return (
