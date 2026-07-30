@@ -22,9 +22,16 @@ export function LiveGrid() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[1600px] mx-auto">
       {cameras.map((cam) => {
         const isHttp = window.location.protocol === 'http:';
-        const basePath = isHttp ? '' : '/go2rtc';
+        //const basePath = isHttp ? '' : '/go2rtc';
         
-        const streamUrl = `${basePath}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+        //const streamUrl = `${basePath}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+
+        //const isLocal = isHttp === true;
+
+        //const isLocal = config?.placeOfExecution?.toUpperCase() === 'LOCAL';
+        const path = isHttp ? `:${config.go2rtcPort}` : '/go2rtc';
+        const protocol = isLocal ? 'http' : 'https';
+       const streamUrl = `${protocol}://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
 
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
