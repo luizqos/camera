@@ -23,7 +23,7 @@ export function LiveGrid() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[1600px] mx-auto">
       {cameras.map((cam) => {
         const isHttp = window.location.protocol === 'http:';
-        const pathOrPort = isHttp ? `${go2rtcPort}` : '/go2rtc';
+        const pathOrPort = isHttp ? `:${go2rtcPort}` : '/go2rtc';
         const streamUrl = `${window.location.protocol}//${window.location.hostname}${pathOrPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
 
         return (
