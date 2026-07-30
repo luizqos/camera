@@ -1,13 +1,23 @@
+// ==============================================================================
+// VARIÁVEIS GLOBAIS
+// ==============================================================================
 let playlist = [];
 let currentIndex = 0;
-let draggedIndex = null;
 
+// Variáveis de controle para o Drag & Drop
+let draggedItemsFromSelect = [];
+let draggedIndexInQueue = null;
+
+// ==============================================================================
+// INICIALIZAÇÃO DA APLICAÇÃO
+// ==============================================================================
 async function loadRuntimeConfig() {
   try {
     const res = await fetch('/config.json');
     return await res.json();
   } catch (e) {
     console.warn('Não foi possível carregar config.json, usando valores padrão.');
+    return { go2rtcPort: '1984', jsonCamera: '/cameras.json', placeOfExecution: 'LOCAL' };
   }
 }
 
@@ -18,11 +28,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupPlayerEvents();
   setupRecordingSelectEvents();
   setupQueueOrderEvents();
+  setupQueueDropZone();
 
   document.getElementById('btn-play-recordings').addEventListener('click', startPlaylistFromSelection);
   document.getElementById('btn-refresh-recordings').addEventListener('click', loadRecordingsList);
 });
 
+// ==============================================================================
+// ABAS E CÂMERAS AO VIVO
+// ==============================================================================
 function setupTabs() {
   const btnLive = document.getElementById('tab-live');
   const btnRecordings = document.getElementById('tab-recordings');
@@ -57,9 +71,9 @@ async function loadLiveCameras(configRuntime) {
       const card = document.createElement('div');
       card.className = 'card';
       
-      const isLocal = placeOfExecution.toUpperCase() === 'LOCAL';
+      const isLocal = placeOfExecution && placeOfExecution.toUpperCase() === 'LOCAL';
       const path = isLocal ? `:${go2rtcPort}` : '/go2rtc';
-      const protocol = isLocal ? `http` : 'https';
+      const protocol = isLocal ? 'http' : 'https';
 
       const streamUrl = `${protocol}://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
 
@@ -80,6 +94,9 @@ async function loadLiveCameras(configRuntime) {
   }
 }
 
+// ==============================================================================
+// CARREGAMENTO E EVENTOS DA LISTA DE GRAVAÇÕES
+// ==============================================================================
 async function loadRecordingsList() {
   const select = document.getElementById('recording-select');
   try {
@@ -100,6 +117,23 @@ async function loadRecordingsList() {
       const option = document.createElement('option');
       option.value = `/recordings/${file.name}`;
       option.textContent = file.name;
+
+      option.setAttribute('draggable', 'true');
+
+      option.addEventListener('dragstart', (e) => {
+        const selectedOptions = Array.from(select.selectedOptions).filter(opt => !opt.disabled);
+        
+        if (selectedOptions.includes(option)) {
+          draggedItemsFromSelect = selectedOptions.map(opt => ({ name: opt.textContent, url: opt.value }));
+        } else {
+          draggedItemsFromSelect = [{ name: option.textContent, url: option.value }];
+        }
+
+        draggedIndexInQueue = null;
+        e.dataTransfer.setData('text/plain', 'from-select');
+        e.dataTransfer.effectAllowed = 'copy';
+      });
+
       select.appendChild(option);
     });
   } catch (err) {
@@ -116,6 +150,9 @@ function setupRecordingSelectEvents() {
   });
 }
 
+// ==============================================================================
+// PLAYER DE VÍDEO E FILA DE REPRODUÇÃO
+// ==============================================================================
 function setupPlayerEvents() {
   const player = document.getElementById('single-record-player');
   player.addEventListener('ended', () => {
@@ -166,35 +203,158 @@ function playCurrentVideo() {
   renderQueueUI();
 }
 
+// ==============================================================================
+// DRAG & DROP E ZONA DE SOLTURA DA FILA
+// ==============================================================================
+function setupQueueDropZone() {
+  const queueWrapper = document.querySelector('.queue-list-wrapper');
+
+  queueWrapper.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    queueWrapper.classList.add('drag-over');
+    e.dataTransfer.dropEffect = draggedIndexInQueue !== null ? 'move' : 'copy';
+  });
+
+  queueWrapper.addEventListener('dragleave', (e) => {
+    if (!queueWrapper.contains(e.relatedTarget)) {
+      queueWrapper.classList.remove('drag-over');
+    }
+  });
+
+  queueWrapper.addEventListener('drop', (e) => {
+    e.preventDefault();
+    queueWrapper.classList.remove('drag-over');
+
+    if (draggedItemsFromSelect && draggedItemsFromSelect.length > 0) {
+      const wasEmpty = playlist.length === 0;
+
+      draggedItemsFromSelect.forEach(newItem => {
+        if (!playlist.some(item => item.url === newItem.url)) {
+          playlist.push(newItem);
+        }
+      });
+
+      draggedItemsFromSelect = [];
+
+      renderQueueUI();
+
+      if (wasEmpty && playlist.length > 0) {
+        currentIndex = 0;
+        playCurrentVideo();
+      }
+    }
+  });
+}
+
 function renderQueueUI() {
   const queueList = document.getElementById('queue-items-list');
+  const queueStatus = document.getElementById('queue-status');
+
   queueList.innerHTML = '';
+  
+  if (playlist.length > 0) {
+    queueStatus.textContent = `Fila: ${currentIndex + 1}/${playlist.length}`;
+  } else {
+    queueStatus.textContent = 'Fila: 0/0';
+    queueList.innerHTML = '<li class="empty-queue">Nenhum vídeo na fila. Arraste ou selecione vídeos acima.</li>';
+    return;
+  }
 
   playlist.forEach((item, index) => {
     const li = document.createElement('li');
     li.className = 'queue-item';
+    li.setAttribute('draggable', 'true');
+    li.dataset.index = index;
 
     if (index === currentIndex) {
       li.classList.add('playing');
-      li.innerHTML = `▶ <strong>${escapeHtml(item.name)}</strong>`;
+      li.innerHTML = `
+        <span class="item-title">☰ ▶ <strong>${escapeHtml(item.name)}</strong></span>
+        <button class="btn-remove" title="Remover da fila">✕</button>
+      `;
     } else {
-      li.innerHTML = `${index + 1}. ${escapeHtml(item.name)}`;
-      li.addEventListener('click', () => {
-        currentIndex = index;
-        playCurrentVideo();
-      });
+      li.innerHTML = `
+        <span class="item-title">☰ ${index + 1}. ${escapeHtml(item.name)}</span>
+        <button class="btn-remove" title="Remover da fila">✕</button>
+      `;
     }
+
+    li.querySelector('.item-title').addEventListener('click', () => {
+      currentIndex = index;
+      playCurrentVideo();
+    });
+
+    li.querySelector('.btn-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeFromPlaylist(index);
+    });
+
+    li.addEventListener('dragstart', (e) => {
+      draggedIndexInQueue = index;
+      draggedItemsFromSelect = [];
+      li.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    li.addEventListener('dragend', () => {
+      li.classList.remove('dragging');
+      draggedIndexInQueue = null;
+    });
+
+    li.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    li.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const targetIndex = index;
+
+      if (draggedIndexInQueue !== null && draggedIndexInQueue !== targetIndex) {
+        const movedItem = playlist.splice(draggedIndexInQueue, 1)[0];
+        playlist.splice(targetIndex, 0, movedItem);
+
+        if (currentIndex === draggedIndexInQueue) {
+          currentIndex = targetIndex;
+        } else if (draggedIndexInQueue < currentIndex && targetIndex >= currentIndex) {
+          currentIndex--;
+        } else if (draggedIndexInQueue > currentIndex && targetIndex <= currentIndex) {
+          currentIndex++;
+        }
+
+        renderQueueUI();
+      }
+    });
 
     queueList.appendChild(li);
   });
 }
 
-function escapeHtml(str) {
-  return str.replace(/[&<>"']/g, match => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[match]));
+function removeFromPlaylist(indexToRemove) {
+  playlist.splice(indexToRemove, 1);
+
+  if (playlist.length === 0) {
+    currentIndex = 0;
+    const player = document.getElementById('single-record-player');
+    player.pause();
+    player.src = '';
+    document.getElementById('current-video-title').textContent = 'Nenhum vídeo selecionado';
+  } else if (indexToRemove < currentIndex) {
+    currentIndex--;
+  } else if (indexToRemove === currentIndex) {
+    if (currentIndex >= playlist.length) {
+      currentIndex = 0;
+    }
+    playCurrentVideo();
+  }
+
+  renderQueueUI();
 }
 
+// ==============================================================================
+// ORDENAÇÃO E UTILITÁRIOS
+// ==============================================================================
 function setupQueueOrderEvents() {
   const btnAsc = document.getElementById('btn-sort-asc');
   const btnDesc = document.getElementById('btn-sort-desc');
@@ -227,73 +387,8 @@ function sortPlaylist(direction) {
   renderQueueUI();
 }
 
-function renderQueueUI() {
-  const queueList = document.getElementById('queue-items-list');
-  const queueStatus = document.getElementById('queue-status');
-
-  queueList.innerHTML = '';
-  
-  if (playlist.length > 0) {
-    queueStatus.textContent = `Fila: ${currentIndex + 1}/${playlist.length}`;
-  } else {
-    queueStatus.textContent = 'Fila: 0/0';
-  }
-
-  playlist.forEach((item, index) => {
-    const li = document.createElement('li');
-    li.className = 'queue-item';
-    li.setAttribute('draggable', 'true');
-    li.dataset.index = index;
-
-    if (index === currentIndex) {
-      li.classList.add('playing');
-      li.innerHTML = `☰ ▶ <strong>${escapeHtml(item.name)}</strong>`;
-    } else {
-      li.innerHTML = `☰ ${index + 1}. ${escapeHtml(item.name)}`;
-      li.addEventListener('click', (e) => {
-        if (!li.classList.contains('dragging')) {
-          currentIndex = index;
-          playCurrentVideo();
-        }
-      });
-    }
-
-    li.addEventListener('dragstart', (e) => {
-      draggedIndex = index;
-      li.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    });
-
-    li.addEventListener('dragend', () => {
-      li.classList.remove('dragging');
-      draggedIndex = null;
-    });
-
-    li.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    });
-
-    li.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const targetIndex = index;
-
-      if (draggedIndex !== null && draggedIndex !== targetIndex) {
-        const movedItem = playlist.splice(draggedIndex, 1)[0];
-        playlist.splice(targetIndex, 0, movedItem);
-
-        if (currentIndex === draggedIndex) {
-          currentIndex = targetIndex;
-        } else if (draggedIndex < currentIndex && targetIndex >= currentIndex) {
-          currentIndex--;
-        } else if (draggedIndex > currentIndex && targetIndex <= currentIndex) {
-          currentIndex++;
-        }
-
-        renderQueueUI();
-      }
-    });
-
-    queueList.appendChild(li);
-  });
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, match => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[match]));
 }
