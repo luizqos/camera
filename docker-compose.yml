@@ -38,7 +38,7 @@ services:
       - cameras-net
 
   web:
-    image: nginx:alpine
+    build: ./web
     container_name: painel_cameras_web
     restart: unless-stopped
     ports:
@@ -49,7 +49,6 @@ services:
       - JSON_CAMERA=${JSON_CAMERA}
       - LOCATION_RUN=${LOCATION_RUN}
     volumes:
-      - ./web:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
       - ./cameras.json:/etc/nginx/cameras.json:ro
       - ${RECORD_PATH}:/record:ro

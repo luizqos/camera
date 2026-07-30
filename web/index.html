@@ -1,76 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel de Monitoramento</title>
-  <link rel="stylesheet" href="./css/styles.css">
-  <script src="./js/app.js" defer></script>
-</head>
-<body>
-  <header>
-    <h1>Sistema de Monitoramento</h1>
-    
-    <nav class="nav-tabs">
-      <button id="tab-live" class="tab-btn active">🔴 Ao Vivo</button>
-      <button id="tab-recordings" class="tab-btn">📁 Gravações</button>
-    </nav>
-  </header>
-
-  <!-- Aba 1: Câmeras Ao Vivo -->
-  <main id="view-live" class="tab-content active">
-    <div class="grid" id="cameras-grid"></div>
-  </main>
-
-  <!-- Aba 2: Visualizador de Gravações -->
-  <main id="view-recordings" class="tab-content">
-    <div class="recordings-layout">
-      
-      <!-- Player Único à Esquerda -->
-      <div class="player-container card">
-        <div class="card-header">
-          <span id="current-video-title">Nenhum vídeo selecionado</span>
-          <span id="queue-status" class="queue-badge">Fila: 0/0</span>
-        </div>
-        <div class="video-wrapper">
-          <video id="single-record-player" controls style="width: 100%; height: 100%;">
-            Seu navegador não suporta vídeos MP4.
-          </video>
-        </div>
-      </div>
-
-      <!-- Painel de Seleção e Fila à Direita -->
-      <div class="sidebar-container">
-        <div class="recorder-controls">
-          <div class="control-group">
-            <label for="recording-select">Selecione uma ou mais gravações (Ctrl/Cmd):</label>
-            <select id="recording-select" multiple size="8">
-              <!-- Preenchido via JS -->
-            </select>
-          </div>
-          <div class="actions">
-            <button id="btn-play-recordings" class="btn-primary">▶ Reproduzir Fila</button>
-            <button id="btn-refresh-recordings" class="btn-secondary">🔄 Atualizar</button>
-          </div>
-        </div>
-
-        <!-- Fila de Reprodução Atual com Ordenação -->
-        <div class="queue-list-wrapper">
-          <div class="queue-header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <h3 style="margin: 0;">Fila de Reprodução</h3>
-            <div class="sort-buttons" style="display: flex; gap: 4px;">
-              <button id="btn-sort-asc" class="btn-secondary btn-sm" title="Ordem Crescente (A-Z)">▲</button>
-              <button id="btn-sort-desc" class="btn-secondary btn-sm" title="Ordem Decrescente (Z-A)">▼</button>
-            </div>
-          </div>
-          
-          <ul id="queue-items-list" class="queue-items-list">
-            <li class="empty-queue">Nenhum vídeo na fila.</li>
-          </ul>
-        </div>
-      </div>
-
-    </div>
-  </main>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Monitoramento</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
