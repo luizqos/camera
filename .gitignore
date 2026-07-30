@@ -2,8 +2,10 @@
 *.mp4
 record/*.mp4
 archive/*.mp4
-*cameras.json
-*go2rtc.yaml
+
+# Configurações locais na raiz
+/cameras.json
+/go2rtc.yaml
 *.env
 
 # Logs
