@@ -32,6 +32,7 @@ export function LiveGrid() {
         const path = isHttp ? `:${config.go2rtcPort}` : '/go2rtc';
         const protocol = isLocal ? 'http' : 'https';
        const streamUrl = `${protocol}://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+       console.log('>>>>>',streamUrl)
 
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
