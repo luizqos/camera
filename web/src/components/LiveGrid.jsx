@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from 'react';
 
-export function LiveGrid({ config }) {
+export function LiveGrid() {
   const [cameras, setCameras] = useState([]);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!config) return;
-    const jsonCameraPath = config.jsonCamera || '/cameras.json';
-
-    fetch(jsonCameraPath)
+    fetch('/cameras.json')
       .then((res) => res.json())
       .then((data) => setCameras(data))
       .catch((err) => {
         console.error('Erro ao carregar câmeras:', err);
         setError(true);
       });
-  }, [config]);
+  }, []);
 
   if (error) {
     return <p className="text-red-400 text-center py-8">Erro ao carregar transmissões ao vivo.</p>;
@@ -24,10 +21,7 @@ export function LiveGrid({ config }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[1600px] mx-auto">
       {cameras.map((cam) => {
-        const isLocal = config?.placeOfExecution?.toUpperCase() === 'LOCAL';
-        const path = isLocal ? `:${config.go2rtcPort}` : '/go2rtc';
-        const protocol = isLocal ? 'http' : 'https';
-        const streamUrl = `${protocol}://${window.location.hostname}${path}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+        const streamUrl = `/go2rtc/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
 
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
@@ -38,7 +32,11 @@ export function LiveGrid({ config }) {
               </span>
             </div>
             <div className="relative w-full aspect-video bg-black">
-              <iframe src={streamUrl} className="absolute inset-0 w-full h-full border-0" allow="autoplay; fullscreen" />
+              <iframe 
+                src={streamUrl} 
+                className="absolute inset-0 w-full h-full border-0" 
+                allow="autoplay; fullscreen" 
+              />
             </div>
           </div>
         );

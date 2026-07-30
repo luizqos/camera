@@ -5,7 +5,6 @@ import { QueueList } from './components/QueueList';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('live');
-  const [config, setConfig] = useState(null);
   const [recordingsFiles, setRecordingsFiles] = useState([]);
   
   const [playlist, setPlaylist] = useState([]);
@@ -15,13 +14,6 @@ export default function App() {
   const [playbackRate, setPlaybackRate] = useState(1);
 
   const playerRef = useRef(null);
-
-  useEffect(() => {
-    fetch('/config.json')
-      .then((res) => res.json())
-      .then((data) => setConfig(data))
-      .catch(() => setConfig({ go2rtcPort: '1984', jsonCamera: '/cameras.json', placeOfExecution: 'LOCAL' }));
-  }, []);
 
   const fetchRecordings = () => {
     fetch('/recordings/')
@@ -78,7 +70,7 @@ export default function App() {
 
   return (
     <div className="max-w-[1600px] mx-auto">
-      {/* Header e Abas */}
+      {/* Header e Navegação por Abas */}
       <header className="flex flex-wrap justify-between items-center mb-5 pb-3 border-b border-slate-800 gap-3">
         <h1 className="text-lg font-bold text-slate-100">Sistema de Monitoramento</h1>
         <nav className="flex gap-2">
@@ -102,7 +94,7 @@ export default function App() {
       </header>
 
       {/* Conteúdo Aba 1: Ao Vivo */}
-      {activeTab === 'live' && <LiveGrid config={config} />}
+      {activeTab === 'live' && <LiveGrid />}
 
       {/* Conteúdo Aba 2: Gravações */}
       {activeTab === 'recordings' && (
@@ -113,7 +105,7 @@ export default function App() {
               <span className="truncate max-w-[250px] sm:max-w-xs">🎬 {currentVideoName}</span>
 
               <div className="flex items-center gap-3">
-                {/* --- SELETOR DE VELOCIDADE (0.25x até 4x) --- */}
+                {/* Seletor de Velocidade (0.25x a 4x) */}
                 <div className="flex items-center gap-1 bg-slate-900 p-1 rounded border border-slate-800">
                   <span className="text-[10px] text-slate-400 px-1 font-normal">Velocidade:</span>
                   {speedOptions.map((rate) => (
