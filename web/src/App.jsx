@@ -7,10 +7,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('live');
   const [config, setConfig] = useState(null);
   const [recordingsFiles, setRecordingsFiles] = useState([]);
-
+  
   const [playlist, setPlaylist] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [draggedItemsFromSelect, setDraggedItemsFromSelect] = useState([]);
+
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   const playerRef = useRef(null);
 
@@ -47,7 +49,15 @@ export default function App() {
   const playVideo = (item) => {
     if (playerRef.current && item) {
       playerRef.current.src = item.url;
+      playerRef.current.playbackRate = playbackRate;
       playerRef.current.play().catch((err) => console.log('Autoplay bloqueado:', err));
+    }
+  };
+
+  const handleSpeedChange = (rate) => {
+    setPlaybackRate(rate);
+    if (playerRef.current) {
+      playerRef.current.playbackRate = rate;
     }
   };
 
@@ -63,27 +73,8 @@ export default function App() {
     setCurrentIndex(0);
   };
 
-  const handlePlaySelection = () => {
-    const select = document.getElementById('recording-select');
-    if (!select) return;
-
-    const selectedOptions = Array.from(select.selectedOptions).filter((opt) => !opt.disabled);
-
-    if (selectedOptions.length === 0) {
-      alert('Selecione pelo menos um arquivo na lista.');
-      return;
-    }
-
-    const newPlaylist = selectedOptions.map((opt) => ({
-      name: opt.textContent,
-      url: opt.value,
-    }));
-
-    setPlaylist(newPlaylist);
-    setCurrentIndex(0);
-  };
-
   const currentVideoName = playlist[currentIndex]?.name || 'Nenhum vídeo selecionado';
+  const speedOptions = [0.25, 0.5, 1, 2, 4];
 
   return (
     <div className="max-w-[1600px] mx-auto">
@@ -93,15 +84,17 @@ export default function App() {
         <nav className="flex gap-2">
           <button
             onClick={() => setActiveTab('live')}
-            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${activeTab === 'live' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}
+            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+              activeTab === 'live' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
           >
             🔴 Ao Vivo
           </button>
           <button
             onClick={() => setActiveTab('recordings')}
-            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${activeTab === 'recordings' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}
+            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+              activeTab === 'recordings' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
           >
             📁 Gravações
           </button>
@@ -114,14 +107,36 @@ export default function App() {
       {/* Conteúdo Aba 2: Gravações */}
       {activeTab === 'recordings' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Player Único à Esquerda (2 Colunas no Desktop) */}
+          {/* Player Único à Esquerda */}
           <div className="lg:col-span-2 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden shadow-lg flex flex-col">
-            <div className="bg-slate-950 px-4 py-3 text-xs font-semibold flex justify-between items-center border-b border-slate-800">
-              <span className="truncate">🎬 {currentVideoName}</span>
-              <span className="bg-slate-800 text-sky-400 px-2 py-0.5 rounded text-[11px]">
-                Fila: {playlist.length > 0 ? `${currentIndex + 1}/${playlist.length}` : '0/0'}
-              </span>
+            <div className="bg-slate-950 px-4 py-2.5 text-xs font-semibold flex flex-wrap justify-between items-center border-b border-slate-800 gap-2">
+              <span className="truncate max-w-[250px] sm:max-w-xs">🎬 {currentVideoName}</span>
+
+              <div className="flex items-center gap-3">
+                {/* --- SELETOR DE VELOCIDADE (0.25x até 4x) --- */}
+                <div className="flex items-center gap-1 bg-slate-900 p-1 rounded border border-slate-800">
+                  <span className="text-[10px] text-slate-400 px-1 font-normal">Velocidade:</span>
+                  {speedOptions.map((rate) => (
+                    <button
+                      key={rate}
+                      onClick={() => handleSpeedChange(rate)}
+                      className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition ${
+                        playbackRate === rate
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                      }`}
+                    >
+                      {rate}x
+                    </button>
+                  ))}
+                </div>
+
+                <span className="bg-slate-800 text-sky-400 px-2 py-0.5 rounded text-[11px]">
+                  Fila: {playlist.length > 0 ? `${currentIndex + 1}/${playlist.length}` : '0/0'}
+                </span>
+              </div>
             </div>
+
             <div className="relative w-full aspect-video bg-black flex-1">
               <video
                 ref={playerRef}
@@ -134,7 +149,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Painel de Seleção e Fila à Direita (1 Coluna no Desktop) */}
+          {/* Painel de Seleção e Fila à Direita */}
           <div className="flex flex-col gap-4">
             <RecordingsList
               files={recordingsFiles}
@@ -144,6 +159,7 @@ export default function App() {
               setPlaylist={setPlaylist}
               setCurrentIndex={setCurrentIndex}
             />
+
             <QueueList
               playlist={playlist}
               setPlaylist={setPlaylist}
