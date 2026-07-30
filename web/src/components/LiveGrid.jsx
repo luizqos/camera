@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 export function LiveGrid() {
   const [cameras, setCameras] = useState([]);
   const [error, setError] = useState(false);
+  const go2rtcPort = import.meta.env.VITE_GO2RTC_PORT || '1984';
 
   useEffect(() => {
     fetch('/cameras.json')
@@ -22,9 +23,8 @@ export function LiveGrid() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[1600px] mx-auto">
       {cameras.map((cam) => {
         const isHttp = window.location.protocol === 'http:';
-        const basePath = isHttp ? '' : '/go2rtc';
-        
-        const streamUrl = `${basePath}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+        const pathOrPort = isHttp ? `:${go2rtcPort}` : '/go2rtc';
+        const streamUrl = `${window.location.protocol}//${window.location.hostname}${pathOrPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
 
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
