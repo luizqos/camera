@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export function RecordingsList({ files, onRefresh, onDirectPlay, onPlaySelection, setDraggedItemsFromSelect, setPlaylist, setCurrentIndex }) {
+export function RecordingsList({ files, onRefresh, onDirectPlay, setDraggedItemsFromSelect, setPlaylist, setCurrentIndex }) {
   const [selectedUrls, setSelectedUrls] = useState([]);
 
   const toggleSelect = (url, e) => {
@@ -17,8 +17,8 @@ export function RecordingsList({ files, onRefresh, onDirectPlay, onPlaySelection
 
   const handleDragStart = (e, file) => {
     let itemsToDrag = [];
-
     const fileUrl = `/recordings/${file.name}`;
+
     if (selectedUrls.includes(fileUrl)) {
       itemsToDrag = files
         .filter((f) => selectedUrls.includes(`/recordings/${f.name}`))
@@ -35,7 +35,7 @@ export function RecordingsList({ files, onRefresh, onDirectPlay, onPlaySelection
 
   const handlePlaySelected = () => {
     if (selectedUrls.length === 0) {
-      alert('Selecione pelo menos uma gravação.');
+      alert('Selecione pelo menos uma gravação na lista.');
       return;
     }
 
@@ -51,7 +51,7 @@ export function RecordingsList({ files, onRefresh, onDirectPlay, onPlaySelection
     <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex flex-col gap-3">
       <div>
         <label className="block text-xs font-medium text-slate-300 mb-2">
-          Gravações (Clique para selecionar, ou segure Ctrl para múltiplos):
+          Gravações (Clique para selecionar, ou segure Ctrl/Cmd para múltiplos):
         </label>
         
         <ul className="w-full h-48 bg-slate-900 border border-slate-700 rounded p-1 text-xs overflow-y-auto space-y-1">

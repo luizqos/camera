@@ -7,7 +7,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('live');
   const [config, setConfig] = useState(null);
   const [recordingsFiles, setRecordingsFiles] = useState([]);
-  
+
   const [playlist, setPlaylist] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [draggedItemsFromSelect, setDraggedItemsFromSelect] = useState([]);
@@ -63,25 +63,25 @@ export default function App() {
     setCurrentIndex(0);
   };
 
-const handlePlaySelection = () => {
-  const select = document.getElementById('recording-select');
-  if (!select) return;
+  const handlePlaySelection = () => {
+    const select = document.getElementById('recording-select');
+    if (!select) return;
 
-  const selectedOptions = Array.from(select.selectedOptions).filter((opt) => !opt.disabled);
+    const selectedOptions = Array.from(select.selectedOptions).filter((opt) => !opt.disabled);
 
-  if (selectedOptions.length === 0) {
-    alert('Selecione pelo menos um arquivo na lista.');
-    return;
-  }
+    if (selectedOptions.length === 0) {
+      alert('Selecione pelo menos um arquivo na lista.');
+      return;
+    }
 
-  const newPlaylist = selectedOptions.map((opt) => ({
-    name: opt.textContent,
-    url: opt.value,
-  }));
+    const newPlaylist = selectedOptions.map((opt) => ({
+      name: opt.textContent,
+      url: opt.value,
+    }));
 
-  setPlaylist(newPlaylist);
-  setCurrentIndex(0);
-};
+    setPlaylist(newPlaylist);
+    setCurrentIndex(0);
+  };
 
   const currentVideoName = playlist[currentIndex]?.name || 'Nenhum vídeo selecionado';
 
@@ -93,17 +93,15 @@ const handlePlaySelection = () => {
         <nav className="flex gap-2">
           <button
             onClick={() => setActiveTab('live')}
-            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-              activeTab === 'live' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
+            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${activeTab === 'live' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+              }`}
           >
             🔴 Ao Vivo
           </button>
           <button
             onClick={() => setActiveTab('recordings')}
-            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-              activeTab === 'recordings' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
+            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${activeTab === 'recordings' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+              }`}
           >
             📁 Gravações
           </button>
@@ -142,10 +140,10 @@ const handlePlaySelection = () => {
               files={recordingsFiles}
               onRefresh={fetchRecordings}
               onDirectPlay={handleDirectPlay}
-              onPlaySelection={handlePlaySelection}
               setDraggedItemsFromSelect={setDraggedItemsFromSelect}
+              setPlaylist={setPlaylist}
+              setCurrentIndex={setCurrentIndex}
             />
-
             <QueueList
               playlist={playlist}
               setPlaylist={setPlaylist}
