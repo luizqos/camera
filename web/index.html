@@ -54,9 +54,16 @@
           </div>
         </div>
 
-        <!-- Fila de Reprodução Atual -->
+        <!-- Fila de Reprodução Atual com Ordenação -->
         <div class="queue-list-wrapper">
-          <h3>Fila de Reprodução</h3>
+          <div class="queue-header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h3 style="margin: 0;">Fila de Reprodução</h3>
+            <div class="sort-buttons" style="display: flex; gap: 4px;">
+              <button id="btn-sort-asc" class="btn-secondary btn-sm" title="Ordem Crescente (A-Z)">▲ Crescente</button>
+              <button id="btn-sort-desc" class="btn-secondary btn-sm" title="Ordem Decrescente (Z-A)">▼ Decrescente</button>
+            </div>
+          </div>
+          
           <ul id="queue-items-list" class="queue-items-list">
             <li class="empty-queue">Nenhum vídeo na fila.</li>
           </ul>

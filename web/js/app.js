@@ -1,5 +1,7 @@
 let playlist = [];
 let currentIndex = 0;
+let draggedIndex = null;
+
 async function loadRuntimeConfig() {
   try {
     const res = await fetch('/config.json');
@@ -15,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadLiveCameras(configRuntime);
   setupPlayerEvents();
   setupRecordingSelectEvents();
+  setupQueueOrderEvents();
 
   document.getElementById('btn-play-recordings').addEventListener('click', startPlaylistFromSelection);
   document.getElementById('btn-refresh-recordings').addEventListener('click', loadRecordingsList);
@@ -190,4 +193,107 @@ function escapeHtml(str) {
   return str.replace(/[&<>"']/g, match => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[match]));
+}
+
+function setupQueueOrderEvents() {
+  const btnAsc = document.getElementById('btn-sort-asc');
+  const btnDesc = document.getElementById('btn-sort-desc');
+
+  if (btnAsc) {
+    btnAsc.addEventListener('click', () => sortPlaylist('asc'));
+  }
+  if (btnDesc) {
+    btnDesc.addEventListener('click', () => sortPlaylist('desc'));
+  }
+}
+
+function sortPlaylist(direction) {
+  if (playlist.length === 0) return;
+
+  const currentItem = playlist[currentIndex];
+
+  playlist.sort((a, b) => {
+    if (direction === 'asc') {
+      return a.name.localeCompare(b.name);
+    } else {
+      return b.name.localeCompare(a.name);
+    }
+  });
+
+  if (currentItem) {
+    currentIndex = playlist.findIndex(item => item.url === currentItem.url);
+  }
+
+  renderQueueUI();
+}
+
+function renderQueueUI() {
+  const queueList = document.getElementById('queue-items-list');
+  const queueStatus = document.getElementById('queue-status');
+
+  queueList.innerHTML = '';
+  
+  if (playlist.length > 0) {
+    queueStatus.textContent = `Fila: ${currentIndex + 1}/${playlist.length}`;
+  } else {
+    queueStatus.textContent = 'Fila: 0/0';
+  }
+
+  playlist.forEach((item, index) => {
+    const li = document.createElement('li');
+    li.className = 'queue-item';
+    li.setAttribute('draggable', 'true');
+    li.dataset.index = index;
+
+    if (index === currentIndex) {
+      li.classList.add('playing');
+      li.innerHTML = `☰ ▶ <strong>${escapeHtml(item.name)}</strong> (Tocando)`;
+    } else {
+      li.innerHTML = `☰ ${index + 1}. ${escapeHtml(item.name)}`;
+      li.addEventListener('click', (e) => {
+        if (!li.classList.contains('dragging')) {
+          currentIndex = index;
+          playCurrentVideo();
+        }
+      });
+    }
+
+    li.addEventListener('dragstart', (e) => {
+      draggedIndex = index;
+      li.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    li.addEventListener('dragend', () => {
+      li.classList.remove('dragging');
+      draggedIndex = null;
+    });
+
+    li.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+
+    li.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const targetIndex = index;
+
+      if (draggedIndex !== null && draggedIndex !== targetIndex) {
+        const movedItem = playlist.splice(draggedIndex, 1)[0];
+        playlist.splice(targetIndex, 0, movedItem);
+
+        if (currentIndex === draggedIndex) {
+          currentIndex = targetIndex;
+        } else if (draggedIndex < currentIndex && targetIndex >= currentIndex) {
+          currentIndex--;
+        } else if (draggedIndex > currentIndex && targetIndex <= currentIndex) {
+          currentIndex++;
+        }
+
+        renderQueueUI();
+      }
+    });
+
+    queueList.appendChild(li);
+  });
 }

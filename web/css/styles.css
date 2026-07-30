@@ -211,25 +211,46 @@ select[multiple] option:checked {
 }
 
 .queue-item {
-  padding: 6px 10px;
-  background: #0f172a;
+  cursor: grab;
+  user-select: none;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background-color: #2a2a2a;
+  border: 1px solid #333;
   border-radius: 4px;
-  font-size: 0.8rem;
-  color: #cbd5e1;
-  cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.queue-item:active {
+  cursor: grabbing;
+}
+
+.queue-item.dragging {
+  opacity: 0.5;
+  background-color: #3b3b3b;
+  border: 1px dashed #007acc;
 }
 
 .queue-item:hover { background: #334155; }
 
 .queue-item.playing {
-  background: #1e3a8a;
-  color: #60a5fa;
-  border-left: 3px solid #2563eb;
+  border-left: 4px solid #007acc;
+  background-color: #1e293b;
 }
 
 .empty-queue {
   font-size: 0.8rem;
   color: #64748b;
   padding: 6px;
+}
+
+.queue-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
