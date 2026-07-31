@@ -95,7 +95,7 @@ export default function App() {
   };
 
   const currentVideoName = playlist[currentIndex]?.name || 'Nenhum vídeo selecionado';
-  const speedOptions = [0.25, 0.5, 1, 2, 4, 8, 16, 32];
+  const speedOptions = [0.25, 0.5, 1, 2, 4, 8, 16];
 
   return (
     <div className="max-w-[1600px] mx-auto">
