@@ -15,6 +15,9 @@ export default function App() {
 
   const playerRef = useRef(null);
 
+  const currentVideo = playlist[currentIndex];
+  const currentVideoUrl = currentVideo?.url;
+
   const fetchRecordings = () => {
     fetch('/recordings/')
       .then((res) => res.json())
@@ -32,7 +35,41 @@ export default function App() {
     }
   }, [activeTab]);
 
+  const playVideo = (item) => {
+    if (!playerRef.current || !item) return;
+
+    try {
+      const player = playerRef.current;
+
+      player.pause();
+      player.src = item.url;
+      player.currentTime = 0;
+      player.playbackRate = playbackRate;
+
+      const playPromise = player.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Playback suspenso durante transição:', err);
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao reproduzir vídeo:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (currentVideo) {
+      playVideo(currentVideo);
+    }
+  }, [currentIndex, currentVideoUrl]);
+
   const handleVideoEnded = () => {
+    if (!playerRef.current) return;
+
+    if (playbackRate > 4) {
+      playerRef.current.playbackRate = 1;
+    }
+
     setCurrentIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
 
@@ -44,38 +81,12 @@ export default function App() {
     });
   };
 
-  const playVideo = (item) => {
-    if (!playerRef.current || !item) return;
-
-    try {
-      playerRef.current.src = item.url;
-      // Força o reset do tempo do vídeo antes de dar o play
-      playerRef.current.currentTime = 0;
-      playerRef.current.playbackRate = playbackRate;
-
-      const playPromise = playerRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn('Autoplay evitado ou interrompido rápida troca:', err);
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao reproduzir o vídeo:', error);
-    }
-  };
-
   const handleSpeedChange = (rate) => {
     setPlaybackRate(rate);
     if (playerRef.current) {
       playerRef.current.playbackRate = rate;
     }
   };
-
-  useEffect(() => {
-    if (playlist.length > 0 && playlist[currentIndex]) {
-      playVideo(playlist[currentIndex]);
-    }
-  }, [currentIndex, playlist]);
 
   const handleDirectPlay = (url, name) => {
     const newItem = { name, url };
@@ -94,15 +105,17 @@ export default function App() {
         <nav className="flex gap-2">
           <button
             onClick={() => setActiveTab('live')}
-            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${activeTab === 'live' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}
+            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+              activeTab === 'live' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
           >
             🔴 Ao Vivo
           </button>
           <button
             onClick={() => setActiveTab('recordings')}
-            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${activeTab === 'recordings' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}
+            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
+              activeTab === 'recordings' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
           >
             📁 Gravações
           </button>
@@ -121,17 +134,18 @@ export default function App() {
               <span className="truncate max-w-[250px] sm:max-w-xs">🎬 {currentVideoName}</span>
 
               <div className="flex items-center gap-3">
-                {/* Seletor de Velocidade (0.25x a 4x) */}
+                {/* Seletor de Velocidade */}
                 <div className="flex items-center gap-1 bg-slate-900 p-1 rounded border border-slate-800">
                   <span className="text-[10px] text-slate-400 px-1 font-normal">Velocidade:</span>
                   {speedOptions.map((rate) => (
                     <button
                       key={rate}
                       onClick={() => handleSpeedChange(rate)}
-                      className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition ${playbackRate === rate
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                        }`}
+                      className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition ${
+                        playbackRate === rate
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                      }`}
                     >
                       {rate}x
                     </button>
@@ -149,6 +163,7 @@ export default function App() {
                 ref={playerRef}
                 controls
                 onEnded={handleVideoEnded}
+                onError={(e) => console.warn('Erro de decodificação no player:', e)}
                 className="w-full h-full object-contain"
               >
                 Seu navegador não suporta vídeos MP4.
