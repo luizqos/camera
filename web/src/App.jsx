@@ -6,7 +6,7 @@ import { QueueList } from './components/QueueList';
 export default function App() {
   const [activeTab, setActiveTab] = useState('live');
   const [recordingsFiles, setRecordingsFiles] = useState([]);
-  
+
   const [playlist, setPlaylist] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [draggedItemsFromSelect, setDraggedItemsFromSelect] = useState([]);
@@ -33,16 +33,34 @@ export default function App() {
   }, [activeTab]);
 
   const handleVideoEnded = () => {
-    if (currentIndex + 1 < playlist.length) {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    setCurrentIndex((prevIndex) => {
+      const nextIndex = prevIndex + 1;
+
+      if (nextIndex < playlist.length) {
+        return nextIndex;
+      }
+
+      return prevIndex;
+    });
   };
 
   const playVideo = (item) => {
-    if (playerRef.current && item) {
+    if (!playerRef.current || !item) return;
+
+    try {
       playerRef.current.src = item.url;
+      // Força o reset do tempo do vídeo antes de dar o play
+      playerRef.current.currentTime = 0;
       playerRef.current.playbackRate = playbackRate;
-      playerRef.current.play().catch((err) => console.log('Autoplay bloqueado:', err));
+
+      const playPromise = playerRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Autoplay evitado ou interrompido rápida troca:', err);
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao reproduzir o vídeo:', error);
     }
   };
 
@@ -76,17 +94,15 @@ export default function App() {
         <nav className="flex gap-2">
           <button
             onClick={() => setActiveTab('live')}
-            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-              activeTab === 'live' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
+            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${activeTab === 'live' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+              }`}
           >
             🔴 Ao Vivo
           </button>
           <button
             onClick={() => setActiveTab('recordings')}
-            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${
-              activeTab === 'recordings' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
+            className={`px-4 py-2 rounded-md font-semibold text-sm transition ${activeTab === 'recordings' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+              }`}
           >
             📁 Gravações
           </button>
@@ -112,11 +128,10 @@ export default function App() {
                     <button
                       key={rate}
                       onClick={() => handleSpeedChange(rate)}
-                      className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition ${
-                        playbackRate === rate
-                          ? 'bg-blue-600 text-white'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                      }`}
+                      className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition ${playbackRate === rate
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        }`}
                     >
                       {rate}x
                     </button>
