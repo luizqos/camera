@@ -41,24 +41,33 @@ Sistema completo de monitoramento, gravação contínua e gerenciamento de armaz
             ├── LiveGrid.jsx         # Grade de câmeras ao vivo
             ├── RecordingsList.jsx   # Seleção de arquivos e Drag & Drop
             └── QueueList.jsx        # Fila de reprodução e reordenação
+```
 
 
 ## ⚙️ Variáveis de Ambiente (`.env`)
 
 Copie o arquivo modelo para criar a sua configuração local:
 
-Bash
-
 ```
 cp env.example .env
 
 ```
+| Variável | Descrição | Exemplo Padrão |
+| :--- | :--- | :--- |
+| `WEB_PORT` | Porta HTTP para acessar a aplicação Web no navegador | `8005` |
+| `VITE_GO2RTC_PORT` | Porta de API do servidor go2rtc | `1984` |
+| `VITE_PUBLISH_IN` | Local de execução da aplicação | `LOCAL` |
+| `RECORD_PATH` | Pasta local onde as gravações ativas ( `.mp4` ) serão salvas | `./record` |
+| `ARCHIVE_PATH` | Pasta/disco secundário para onde vídeos velhos serão movidos | `/mnt/Cameras` |
+| `MAX_STORAGE_GB` | Espaço máximo alocado para a pasta de gravações (em GB) | `100` |
+| `TRIGGER_PERCENT` | Porcentagem ocupada do limite para disparar a limpeza | `80` (80% de 100GB) |
+| `PURGE_PERCENT` | Porcentagem do limite de espaço a ser liberada na limpeza | `30` (30% de 100GB) |
+| `CLEANUP_ACTION` | Ação ao atingir o limite: `MOVE` (move para `ARCHIVE_PATH` ) ou `DELETE` | `MOVE` |
+| `CLEANUP_TIME` | Intervalo em horas para verificar a cota do disco | `12` |
 
 ## 📹 Configurando Câmeras (`cameras.json`)
 
 Edite o arquivo `cameras.json` na raiz do projeto para definir as câmeras que serão exibidas na interface e quais devem ser gravadas:
-
-JSON
 
 ```
 [
@@ -72,7 +81,7 @@ JSON
 
 ```
 
-> ⚠️ **Nota:** A propriedade `id` deve coincidir exatamente com a chave configurada no arquivo `go2rtc.yaml`.
+⚠️ **Nota:** A propriedade `id` deve coincidir exatamente com a chave configurada no arquivo `go2rtc.yaml`.
 
 ## 🚀 Como Executar o Projeto
 
@@ -93,22 +102,20 @@ docker compose -f docker-compose-server.yml up -d --build
 
 Acesse a interface pelo navegador no endereço: **`http://localhost:8005`**
 
+
 ### Rodando o Frontend em Desenvolvimento Local (com Hot Reload)
 
 Para fazer alterações e testar a interface em tempo real:
 
 1.  **Suba apenas os serviços de backend (go2rtc e gravador):**
     
-    Bash
-    
+   
     ```
     docker compose up -d go2rtc gravador
     
     ```
     
 2.  **Inicie o servidor de desenvolvimento do Vite:**
-    
-    Bash
     
     ```
     cd web
@@ -118,7 +125,6 @@ Para fazer alterações e testar a interface em tempo real:
     ```
     
 3.  Acesse a aplicação em **`http://localhost:3000`**. As chamadas de vídeo e gravações serão redirecionadas via proxy para a porta `8005`.
-    
 
 ## 🎬 Funcionalidades da Interface Web
 
@@ -142,9 +148,7 @@ Para fazer alterações e testar a interface em tempo real:
 ## 🛠️ Comandos Úteis
 
 -   **Visualizar logs do frontend (Nginx):**
-    
-    Bash
-    
+
     ```
     docker logs -f painel_cameras_web
     
@@ -152,16 +156,12 @@ Para fazer alterações e testar a interface em tempo real:
     
 -   **Visualizar logs do processo de gravação e limpeza de disco:**
     
-    Bash
-    
     ```
     docker logs -f gravador_cameras
     
     ```
     
 -   **Reiniciar os contêineres após alterações de configuração:**
-    
-    Bash
     
     ```
     docker compose restart

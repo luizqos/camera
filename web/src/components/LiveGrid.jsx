@@ -4,6 +4,7 @@ export function LiveGrid() {
   const [cameras, setCameras] = useState([]);
   const [error, setError] = useState(false);
   const go2rtcPort = import.meta.env.VITE_GO2RTC_PORT || '1984';
+  const publishIn = import.meta.env.VITE_PUBLISH_IN || 'SERVER';
 
   useEffect(() => {
     fetch('/cameras.json')
@@ -22,10 +23,11 @@ export function LiveGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[1600px] mx-auto">
       {cameras.map((cam) => {
-        const isHttp = window.location.protocol === 'http:';
-        const pathOrPort = isHttp ? `:${go2rtcPort}` : '/go2rtc';
-        const streamUrl = `${window.location.protocol}//${window.location.hostname}${pathOrPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+        const isLocal = publishIn?.toUpperCase() === 'LOCAL';
+        const protocol = isLocal ? 'http' : 'https';
+        const pathOrPort = isLocal ? `:${go2rtcPort}` : '/go2rtc';
 
+        const streamUrl = `${protocol}://${window.location.hostname}${pathOrPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
             <div className="bg-slate-950 px-3 py-2 text-xs font-semibold flex justify-between items-center border-b border-slate-800">
@@ -35,10 +37,10 @@ export function LiveGrid() {
               </span>
             </div>
             <div className="relative w-full aspect-video bg-black">
-              <iframe 
-                src={streamUrl} 
-                className="absolute inset-0 w-full h-full border-0" 
-                allow="autoplay; fullscreen" 
+              <iframe
+                src={streamUrl}
+                className="absolute inset-0 w-full h-full border-0"
+                allow="autoplay; fullscreen"
               />
             </div>
           </div>
