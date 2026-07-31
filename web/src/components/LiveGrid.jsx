@@ -3,8 +3,6 @@ import React, { useEffect, useState } from 'react';
 export function LiveGrid() {
   const [cameras, setCameras] = useState([]);
   const [error, setError] = useState(false);
-  const go2rtcPort = import.meta.env.VITE_GO2RTC_PORT || '1984';
-  const publishIn = import.meta.env.VITE_PUBLISH_IN || 'SERVER';
 
   useEffect(() => {
     fetch('/cameras.json')
@@ -24,9 +22,9 @@ export function LiveGrid() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[1600px] mx-auto">
       {cameras.map((cam) => {
         const isExternalWeb = cam.url && (cam.url.startsWith('http://') || cam.url.startsWith('https://'));
-
+        
         let streamUrl = '';
-
+        
         if (isExternalWeb) {
           streamUrl = cam.url;
         } else {
@@ -35,21 +33,20 @@ export function LiveGrid() {
           streamUrl = `${basePath}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
         }
 
-        const streamUrl = `${protocol}://${window.location.hostname}${pathOrPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
             <div className="bg-slate-950 px-3 py-2 text-xs font-semibold flex justify-between items-center border-b border-slate-800">
               <span>{cam.name}</span>
               <span className="flex items-center gap-1.5 text-green-400">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> 
                 {isExternalWeb ? 'Web Live' : 'Ao Vivo'}
               </span>
             </div>
             <div className="relative w-full aspect-video bg-black">
-              <iframe
-                src={streamUrl}
-                className="absolute inset-0 w-full h-full border-0"
-                allow="autoplay; fullscreen"
+              <iframe 
+                src={streamUrl} 
+                className="absolute inset-0 w-full h-full border-0" 
+                allow="autoplay; fullscreen" 
               />
             </div>
           </div>
