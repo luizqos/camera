@@ -26,7 +26,7 @@ export function LiveGrid() {
         const isLocal = publishIn?.toUpperCase() === 'LOCAL';
         const protocol = isLocal ? 'http' : 'https';
         const pathOrPort = isLocal ? `:${go2rtcPort}` : '/go2rtc';
-
+        console.log("islocal", isLocal, "publishIn", publishIn, import.meta?.env?.VITE_PUBLISH_IN);
         const streamUrl = `${protocol}://${window.location.hostname}${pathOrPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
