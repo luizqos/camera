@@ -43,15 +43,15 @@ services:
       args:
         - VITE_GO2RTC_PORT=${VITE_GO2RTC_PORT}
         - VITE_PUBLISH_IN=${VITE_PUBLISH_IN}
-      container_name: painel_cameras_web
-      restart: unless-stopped
-      ports:
-        - "${WEB_PORT}:80"
-      volumes:
-        - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
-        - ./cameras.json:/etc/nginx/cameras.json:ro
-        - ${RECORD_PATH}:/record:ro
-      depends_on:
-        - go2rtc
-      networks:
-        - cameras-net
+    container_name: painel_cameras_web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./cameras.json:/etc/nginx/cameras.json:ro
+      - ${RECORD_PATH}:/record:ro
+    depends_on:
+      - go2rtc
+    networks:
+      - cameras-net
