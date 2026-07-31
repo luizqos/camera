@@ -8,7 +8,7 @@ services:
     container_name: go2rtc
     restart: unless-stopped
     ports:
-      - "${GO2RTC_PORT}:1984"
+      - "1984:1984"
       - "8554:8554"
       - "8555:8555/tcp"
       - "8555:8555/udp"
@@ -19,21 +19,20 @@ services:
       - cameras-net
       
   web:
-    build: ./web
-    container_name: painel_cameras_web
-    restart: unless-stopped
-    ports:
-      - "${WEB_PORT}:80"
-    environment:
-      - GO2RTC_PORT=${GO2RTC_PORT}
-      - BASE_PATH=${BASE_PATH}
-      - JSON_CAMERA=${JSON_CAMERA}
-      - LOCATION_RUN=${LOCATION_RUN}
-    volumes:
-      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
-      - ./cameras.json:/etc/nginx/cameras.json:ro
-      - ${RECORD_PATH}:/record:ro
-    depends_on:
-      - go2rtc
-    networks:
-      - cameras-net
+    build:
+      context: ./web
+      args:
+        - VITE_GO2RTC_PORT=${VITE_GO2RTC_PORT}
+        - VITE_PUBLISH_IN=${VITE_PUBLISH_IN}
+      container_name: painel_cameras_web
+      restart: unless-stopped
+      ports:
+        - "${WEB_PORT}:80"
+      volumes:
+        - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro
+        - ./cameras.json:/etc/nginx/cameras.json:ro
+        - ${RECORD_PATH}:/record:ro
+      depends_on:
+        - go2rtc
+      networks:
+        - cameras-net
