@@ -23,9 +23,17 @@ export function LiveGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[1600px] mx-auto">
       {cameras.map((cam) => {
-        const isLocal = publishIn?.toUpperCase() === 'LOCAL';
-        const protocol = isLocal ? 'http' : 'https';
-        const pathOrPort = isLocal ? `:${go2rtcPort}` : '/go2rtc';
+        const isExternalWeb = cam.url && (cam.url.startsWith('http://') || cam.url.startsWith('https://'));
+
+        let streamUrl = '';
+
+        if (isExternalWeb) {
+          streamUrl = cam.url;
+        } else {
+          const isHttp = window.location.protocol === 'http:';
+          const basePath = isHttp ? '' : '/go2rtc';
+          streamUrl = `${basePath}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
+        }
 
         const streamUrl = `${protocol}://${window.location.hostname}${pathOrPort}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
         return (
@@ -33,7 +41,8 @@ export function LiveGrid() {
             <div className="bg-slate-950 px-3 py-2 text-xs font-semibold flex justify-between items-center border-b border-slate-800">
               <span>{cam.name}</span>
               <span className="flex items-center gap-1.5 text-green-400">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Ao Vivo
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                {isExternalWeb ? 'Web Live' : 'Ao Vivo'}
               </span>
             </div>
             <div className="relative w-full aspect-video bg-black">
