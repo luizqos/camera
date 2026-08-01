@@ -4,6 +4,14 @@ export function LiveGrid() {
   const [cameras, setCameras] = useState([]);
   const [error, setError] = useState(false);
 
+  const go2rtcPort = import.meta.env.VITE_GO2RTC_PORT || '1984';
+  const publishIn = import.meta.env.VITE_PUBLISH_IN || 'SERVER';
+
+  const isLocal = publishIn?.toUpperCase() === 'LOCAL';
+  const baseUrl = isLocal
+    ? `http://${window.location.hostname}:${go2rtcPort}`
+    : `https://${window.location.hostname}/go2rtc`;
+
   useEffect(() => {
     fetch('/cameras.json')
       .then((res) => res.json())
@@ -21,17 +29,11 @@ export function LiveGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-[1600px] mx-auto">
       {cameras.map((cam) => {
-        const isExternalWeb = cam.url && (cam.url.startsWith('http://') || cam.url.startsWith('https://'));
-        
-        let streamUrl = '';
-        
-        if (isExternalWeb) {
-          streamUrl = cam.url;
-        } else {
-          const isHttp = window.location.protocol === 'http:';
-          const basePath = isHttp ? '' : '/go2rtc';
-          streamUrl = `${basePath}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
-        }
+        const isExternalWeb = Boolean(cam.url) && cam.type?.toUpperCase() === 'EXTERNA';
+
+        const streamUrl = isExternalWeb
+          ? cam.url
+          : `${baseUrl}/stream.html?src=${encodeURIComponent(cam.id)}&muted=1`;
 
         return (
           <div key={cam.id} className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
