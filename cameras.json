@@ -3,7 +3,6 @@
     "id": "camera_garagem",
     "name": "Câmera 01 - Garagem",
     "url": "rtsp://admin:Ferrugem2026@192.168.3.10:554/onvif1",
-    "type": "interna",
     "record": true
   }
 ]
