@@ -4,7 +4,7 @@ record/*.mp4
 archive/*.mp4
 
 # Configurações locais na raiz
-/cameras.json
+#/cameras.json
 /go2rtc.yaml
 *.env
 
