@@ -2,7 +2,8 @@
   {
     "id": "camera_garagem",
     "name": "Câmera 01 - Garagem",
-    "url": "rtsp://admin:Ferrugem2026@192.168.3.10:554/onvif1",
-    "record": true
+    "url": "rtsp://100.68.221.40:8554/camera_garagem",
+    "type": "cftv",
+    "record": false
   }
 ]

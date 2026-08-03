@@ -3,4 +3,4 @@ api:
   origin: "*"
 
 streams:
-  camera_garagem: "rtsp://admin:Ferrugem2026@192.168.3.10:554/onvif1"
+  camera_garagem: "rtsp://100.68.221.40:8554/camera_garagem"
