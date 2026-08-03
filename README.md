@@ -75,8 +75,16 @@ Edite o arquivo `cameras.json` na raiz do projeto para definir as câmeras que s
     "id": "camera_garagem",
     "name": "Câmera 01 - Garagem",
     "url": "rtsp://usuario:senha@192.168.1.50:554/stream1",
+    "type": "interna",
     "record": true
-  }
+  },
+  {
+    "id": "camera_centro",
+    "name": "Câmera 02 - Centro",
+    "url": "https://seudominio.com.br/stream1",
+    "type": "externa",
+    "record": false
+  },
 ]
 
 ```
